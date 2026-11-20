@@ -1,0 +1,45 @@
+# Set default index file
+DirectoryIndex index.html index.php
+
+# Allow access to all files and directories (for older Apache versions)
+Order allow,deny
+Allow from all
+
+# Protect sensitive files
+<FilesMatch "^\.env">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Allow access to all files and directories (for Apache 2.4+)
+<RequireAll>
+    Require all granted
+</RequireAll>
+
+# BEGIN WordPress (commented out)
+# The directives (lines) between "BEGIN WordPress" and "END WordPress" are
+# dynamically generated, and should only be modified via WordPress filters.
+# Any changes to the directives between these markers will be overwritten.
+#<IfModule mod_rewrite.c>
+#RewriteEngine On
+#RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+#RewriteBase /
+#RewriteRule ^index\.php$ - [L]
+#RewriteCond %{REQUEST_FILENAME} !-f
+#RewriteCond %{REQUEST_FILENAME} !-d
+#RewriteRule . /index.php [L]
+#</IfModule>
+# END WordPress
+# Disable caching for HTML files so script/style updates take effect immediately
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+</IfModule>

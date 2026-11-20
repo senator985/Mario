@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تنظیمات | GameMario</title>
+    <!-- Favicon for the site -->
+    <link rel="icon" href="../public/assets/logo.svg" type="image/svg+xml">
+
+    <!-- Tailwind CSS for styling -->
+    <script src="../public/assets/libs/tailwind.js"></script>
+
+    <!-- Chart.js for charts and reports -->
+    <script src="../public/assets/libs/chart.js"></script>
+
+    <!-- Libraries for exporting tables -->
+    <script src="../public/assets/libs/xlsx.full.min.js"></script>
+
+    <!-- Moment.js for date and time manipulation -->
+    <script src="../public/assets/libs/moment.min.js"></script>
+    <script src="../public/assets/libs/moment-jalaali.js"></script>
+    <script
+        src="../public/assets/libs/chartjs-adapter-moment.min.js"></script>
+
+    <!-- Anime.js for animations -->
+    <script src="../public/assets/libs/anime.min.js"></script>
+
+    <!-- Tone.js for audio notifications -->
+    <script src="../public/assets/libs/Tone.js"></script>
+
+    <link rel="stylesheet" href="../public/assets/styles.css">
+    <style>
+        .neon-text {
+            font-family: 'Orbitron', sans-serif;
+            color: #e53e3e;
+            text-shadow: 0 0 5px rgba(229, 62, 62, 0.7);
+            letter-spacing: 2px;
+        }
+
+        .status-card {
+            background-color: #2a2a2a;
+            border: 1px solid #4b5563;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            transition: all 0.3s ease;
+        }
+
+        /* AVAILABLE (GREEN) */
+        .status-card.available {
+            border-color: #10b981;
+        }
+        .status-card.available::before {
+            background: #10b981;
+        }
+        .status-card.available .card-status-icon {
+            color: #10b981;
+        }
+        .status-card.available .card-status-text {
+            color: #34d399;
+        }
+
+        /* OCCUPIED (RED) */
+        .status-card.occupied {
+            border-color: #dc2626;
+        }
+        .status-card.occupied::before {
+            background: #dc2626;
+        }
+        .status-card.occupied .card-status-icon {
+            color: #dc2626;
+        }
+        .status-card.occupied .card-status-text {
+            color: #e53e3e;
+        }
+
+        .card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .card-status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .card-status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .card-status-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s forwards;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .card-status-text {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .card-timer {
+            font-size: 1.125rem;
+            margin-top: 1rem;
+            color: #d1d5db;
+            direction: ltr;
+        }
+
+        .card-timer strong {
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff;
+        }
+    </style>
+
+<body class="antialiased" data-page="settings">
+<div id="loading-overlay" class="modal-overlay hidden">
+        <div id="new-loader" class="w-24 h-24">
+            <img src="../public/assets/logo.svg" alt="Loading...">
+        </div>
+    </div>
+<div id="secretary-bonus-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ثبت پاداش</h3>
+            <form id="secretary-bonus-form" class="space-y-4">
+                <input type="hidden" id="secretary-bonus-log-id">
+                <div>
+                    <label for="secretary-bonus-amount" class="block mb-2 text-sm">مبلغ (تومان)</label>
+                    <input type="number" id="secretary-bonus-amount" class="input-field" placeholder="مثلاً 500000" min="0" step="1000" required>
+                </div>
+                <div>
+                    <label for="secretary-bonus-description" class="block mb-2 text-sm">توضیحات</label>
+                    <textarea id="secretary-bonus-description" class="input-field" rows="3" placeholder="توضیحات پاداش..."></textarea>
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ثبت پاداش</button>
+                    <button type="button" onclick="closeModal('secretary-bonus-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Secretary Fine Modal -->
+    <div id="secretary-fine-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ثبت جریمه</h3>
+            <form id="secretary-fine-form" class="space-y-4">
+                <input type="hidden" id="secretary-fine-log-id">
+                <div>
+                    <label for="secretary-fine-amount" class="block mb-2 text-sm">مبلغ (تومان)</label>
+                    <input type="number" id="secretary-fine-amount" class="input-field" placeholder="مثلاً 200000" min="0" step="1000" required>
+                </div>
+                <div>
+                    <label for="secretary-fine-description" class="block mb-2 text-sm">توضیحات</label>
+                    <textarea id="secretary-fine-description" class="input-field" rows="3" placeholder="توضیحات جریمه..."></textarea>
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ثبت جریمه</button>
+                    <button type="button" onclick="closeModal('secretary-fine-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Settle Check Modal -->
+    <div id="edit-expense-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-md">
+            <h3 id="edit-expense-modal-title" class="text-xl font-bold text-white mb-4">ویرایش</h3>
+            <form id="edit-expense-form" class="space-y-4">
+                <input type="hidden" id="edit-expense-id">
+                <input type="hidden" id="edit-expense-type">
+
+                <div>
+                    <label for="edit-expense-title" class="block mb-2 text-sm">عنوان</label>
+                    <input type="text" id="edit-expense-title" class="input-field" required>
+                </div>
+                <div>
+                    <label for="edit-expense-amount" class="block mb-2 text-sm">مبلغ</label>
+                    <input type="text" id="edit-expense-amount" class="input-field currency-input" required
+                        style="direction: ltr;">
+                </div>
+
+                <!-- Fields for Expense Type -->
+                <div id="edit-expense-fields" class="hidden space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="edit-expense-category" class="block mb-2 text-sm">دسته‌بندی</label>
+                            <select id="edit-expense-category" class="input-field">
+                                <option value="قبض">قبض</option>
+                                <option value="حقوق">حقوق</option>
+                                <option value="تعمیرات">تعمیرات</option>
+                                <option value="خرید">خرید</option>
+                                <option value="سایر">سایر</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="edit-expense-payment-method" class="block mb-2 text-sm">نحوه پرداخت</label>
+                            <select id="edit-expense-payment-method" class="input-field">
+                                <option value="نقد">نقد</option>
+                                <option value="کارت">کارت</option>
+                                <option value="کارت به کارت">کارت به کارت</option>
+                                <option value="چک">چک</option>
+                                <option value="سایر">سایر</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fields for Check Type -->
+                <div id="edit-check-fields" class="hidden space-y-4">
+                    <div class="relative">
+                        <label for="edit-expense-due-date-display" class="block mb-2 text-sm">تاریخ سررسید</label>
+                        <input type="text" id="edit-expense-due-date-display" class="input-field cursor-pointer"
+                            placeholder="برای انتخاب کلیک کنید" readonly>
+                        <input type="hidden" id="edit-expense-due-date">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="edit-expense-description" class="block mb-2 text-sm">توضیحات (اختیاری)</label>
+                    <textarea id="edit-expense-description" class="input-field" rows="2"></textarea>
+                </div>
+
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره تغییرات</button>
+                    <button type="button" onclick="closeModal('edit-expense-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="settle-check-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">پرداخت چک</h3>
+            <form id="settle-check-form" class="space-y-4">
+                <input type="hidden" id="settle-check-id">
+                <p>چک به شماره <span id="settle-check-title" class="font-bold text-amber-400"></span> به مبلغ <span
+                        id="settle-check-amount" class="font-bold text-amber-400"></span></p>
+                <div>
+                    <label for="settle-check-payment-method" class="block mb-2 text-sm">نحوه پرداخت</label>
+                    <select id="settle-check-payment-method" class="input-field">
+                        <option value="نقد">نقد</option>
+                        <option value="کارت">کارت</option>
+                        <option value="کارت به کارت">کارت به کارت</option>
+                        <option value="چک">چک</option>
+                        <option value="سایر">سایر</option>
+                    </select>
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">تایید پرداخت</button>
+                    <button type="button" onclick="closeModal('settle-check-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<div id="toast-container" class="fixed top-5 left-5 z-[99999] flex flex-col gap-3 max-w-sm md:max-w-md w-full pointer-events-none transition-all duration-300"></div>
+<div id="app-container" class="hidden h-screen" style="background-color: #1a1a1a;">
+
+        <!-- Mobile Header -->
+        <header class="md:hidden border-b p-4 flex justify-between items-center sticky top-0 z-30"
+            style="background-color: #2a2a2a; border-color: #4b5563;">
+            <div class="flex items-center">
+                <img src="../public/assets/logo.svg" class="h-10 w-10" alt="Logo">
+                <h1 class="text-lg font-bold text-white mr-2 neon-text" style="font-family: 'Orbitron', sans-serif;">
+                    گیم‌نت ماریو</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button id="notif-bell-btn-mobile" class="relative text-stone-300 hover:text-white p-1 focus:outline-none" title="مرکز اعلان‌ها">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <span class="notif-badge hidden absolute -top-1 -right-1 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center border border-stone-900 shadow">0</span>
+                </button>
+                <button id="mobile-menu-button" class="text-gray-200 focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                        </path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar Overlay for Mobile -->
+            <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-30 hidden md:hidden"></div>
+
+            <!-- Sidebar -->
+            <aside id="sidebar"
+                class="w-64 flex-shrink-0 p-4 flex flex-col fixed md:relative inset-y-0 right-0 z-40 transform translate-x-full md:translate-x-0">
+                <div class="flex items-center justify-between mb-8">
+                    <div class="flex items-center">
+                        <img src="../public/assets/logo.svg" class="h-10 w-10" alt="Logo">
+                        <div class="mr-3">
+                            <h1 class="text-xl font-bold text-white neon-text"
+                                style="font-family: 'Orbitron', sans-serif;">گیم‌نت ماریو</h1>
+                            <p id="current-user-display" class="text-base text-stone-300">کاربر: ---</p>
+                        </div>
+                    </div>
+                    <button id="notif-bell-btn-desktop" class="relative text-stone-300 hover:text-white p-2 rounded-lg hover:bg-stone-800 transition focus:outline-none" title="مرکز اعلان‌ها">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span class="notif-badge hidden absolute top-0.5 right-0.5 bg-red-600 text-white text-[10px] font-bold rounded-full h-4 min-w-[16px] px-1 flex items-center justify-center border border-stone-900 shadow">0</span>
+                    </button>
+                </div>
+
+                <!-- Live Clock & Sync Status -->
+                <div id="live-clock-container" class="text-center my-4 p-3 rounded-lg border"
+                    style="background-color: #1a1a1a; border-color: #4b5563;">
+                    <p id="live-clock" class="text-xl font-bold text-white"
+                        style="font-family: 'Orbitron', sans-serif; direction: ltr;"></p>
+                    <p id="live-date" class="text-base text-gray-300"></p>
+                </div>
+
+                <nav id="sidebar-nav" class="flex-grow">
+                    <a href="orders.html" data-page="orders"
+                        class="nav-link  flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg class="sidebar-icon ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                            </path>
+                        </svg>
+                        مدیریت سفارشات
+                    </a>
+                    <a href="tournaments.html" data-page="tournaments"
+                        class="nav-link  flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg class="sidebar-icon ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                        مدیریت تورنومنت
+                    </a>
+                    <a id="nav-reports" href="reports.html" data-page="reports"
+                        class="nav-link  flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg class="sidebar-icon ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                            </path>
+                        </svg>
+                        آمار و گزارشات
+                    </a>
+                    <a href="customers.html" data-page="customers"
+                        class="nav-link  flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg class="sidebar-icon ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
+                        </svg>
+                        مدیریت مشتریان
+                    </a>
+                    <a href="buffet.html" data-page="buffet"
+                        class="nav-link  flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg class="sidebar-icon ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                        مدیریت بوفه
+                    </a>
+                    <a href="expenses.html" data-page="expenses"
+                        class="nav-link  flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon ml-3" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        مدیریت هزینه‌ها
+                    </a>
+                    <a id="nav-secretary" href="secretary.html" data-page="secretary"
+                        class="nav-link  flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="sidebar-icon ml-3" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        مدیریت کارکرد منشی
+                    </a>
+                    <a id="nav-settings" href="settings.html" data-page="settings"
+                        class="nav-link active flex items-center p-3 my-1 rounded-lg text-stone-200 hover:bg-stone-700 transition-colors">
+                        <svg class="sidebar-icon ml-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924-1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
+                            </path>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
+                            </path>
+                        </svg>
+                        تنظیمات
+                    </a>
+                </nav>
+                <div class="mt-auto space-y-3 pt-4 border-t border-stone-700 mb-4">
+                    <div class="flex items-center justify-between px-2 text-xs">
+                        <label for="enable-notifications-checkbox" class="text-stone-400 cursor-pointer">صدا و نوتیفیکیشن</label>
+                        <input type="checkbox" id="enable-notifications-checkbox"
+                            class="form-checkbox h-4 w-4 text-red-500 bg-stone-800 border-stone-600 rounded focus:ring-red-500 cursor-pointer">
+                    </div>
+                    <div class="flex items-center justify-between px-2 text-xs">
+                        <label for="enable-autosync-checkbox" class="text-stone-400 cursor-pointer">همگام‌سازی خودکار</label>
+                        <input type="checkbox" id="enable-autosync-checkbox"
+                            class="form-checkbox h-4 w-4 text-amber-500 bg-stone-800 border-stone-600 rounded focus:ring-amber-500 cursor-pointer">
+                    </div>
+                    <button id="logout-button" class="btn btn-danger w-full !py-2">خروج</button>
+                </div>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+<div id="settings-page" class="page-content">
+                    <h2 class="text-2xl md:text-3xl font-bold text-white mb-6">تنظیمات</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Console Management -->
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-white mb-4">مدیریت کنسول‌ها</h3>
+                            <form id="new-console-form" class="mb-4 space-y-4">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" id="console-type" class="input-field"
+                                        placeholder="نوع کنسول (مثلا PS5)" required>
+                                    <input type="number" id="console-number" class="input-field" placeholder="شماره"
+                                        required>
+                                </div>
+                                <div id="rate-fields-container" class="space-y-2 my-2">
+                                </div>
+                                <button type="button" id="add-rate-field-btn"
+                                    class="text-sm text-amber-400 hover:text-amber-300 mb-4">+ افزودن تعرفه
+                                    دیگر</button>
+
+                                <div class="border-t border-stone-700 my-4"></div>
+                                <h4 class="text-lg font-bold text-white">تعرفه ساعتی ویژه</h4>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <input type="time" id="special-rate-start-time" class="input-field"
+                                        placeholder="زمان شروع">
+                                    <input type="time" id="special-rate-end-time" class="input-field"
+                                        placeholder="زمان پایان">
+                                    <input type="text" id="special-rate-amount" class="input-field currency-input"
+                                        placeholder="مبلغ اضافی" style="direction: ltr;">
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-full mt-4">افزودن کنسول</button>
+                            </form>
+                            <div id="consoles-list" class="overflow-auto max-h-60"></div>
+                        </div>
+                        <!-- User Management -->
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-white mb-4">مدیریت کاربران (منشی)</h3>
+                            <form id="new-user-form" class="mb-4 space-y-4">
+                                <input type="text" id="new-user-username" class="input-field"
+                                    placeholder="نام کاربری منشی" required>
+                                <input type="password" id="new-user-password" class="input-field"
+                                    placeholder="رمز عبور موقت" required>
+                                <label class="block mb-2 text-sm font-medium text-stone-300">دسترسی‌ها</label>
+                                <div
+                                    class="grid grid-cols-1 gap-2 text-sm text-stone-300 bg-stone-800 p-3 rounded h-60 overflow-y-auto border border-stone-600">
+                                    <!-- View Permissions -->
+                                    <div class="font-bold text-amber-500 mt-2 mb-1 border-b border-stone-600 pb-1">
+                                        مشاهده صفحات</div>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_orders"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">داشبورد
+                                        (سفارشات)</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_tournaments"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">تورنومنت</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_reports"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">گزارشات</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_customers"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مشتریان</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_buffet"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">بوفه</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_expenses"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">هزینه‌ها</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_secretary"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">کارکرد
+                                        منشی</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="view_settings"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">تنظیمات</label>
+
+                                    <!-- Action Permissions -->
+                                    <div class="font-bold text-amber-500 mt-4 mb-1 border-b border-stone-600 pb-1">
+                                        عملیات مدیریتی</div>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="manage_users"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                                        کاربران</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="manage_consoles"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                                        کنسول‌ها</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="manage_buffet"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                                        بوفه (افزودن/ویرایش)</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="manage_expenses"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                                        هزینه‌ها (ثبت/ویرایش)</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="manage_tournaments"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                                        تورنومنت (ایجاد/حذف)</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="edit_orders"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">ویرایش
+                                        سفارشات</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="delete_orders"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">حذف
+                                        سفارشات</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="settle_orders"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">تسویه
+                                        حساب</label>
+                                    <label class="flex items-center"><input type="checkbox" name="permissions"
+                                            value="manage_secretary_logs"
+                                            class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                                        لاگ منشی (تسویه/ویرایش)</label>
+                                </div>
+                                <div class="mt-2">
+                                    <label for="new-user-hourly-rate"
+                                        class="block mb-2 text-sm font-medium text-stone-300">نرخ
+                                        ساعتی (تومان)</label>
+                                    <input type="text" id="new-user-hourly-rate" class="input-field currency-input"
+                                        placeholder="مثلا: 50,000" value="0" style="direction: ltr;">
+                                </div>
+                                <button type="submit" class="btn btn-primary w-full">افزودن کاربر</button>
+                            </form>
+                            <div class="border-t border-stone-700 my-4 pt-4">
+                                <h4 class="text-lg font-bold text-white mb-2">لیست کاربران فعلی</h4>
+                                <div id="users-table"
+                                    class="overflow-auto max-h-60 bg-stone-900 rounded border border-stone-700"></div>
+                            </div>
+
+                        </div>
+                        <!-- Default Services Management -->
+                        <div class="card">
+                            <h3 class="text-xl font-bold text-white mb-4">مدیریت خدمات پیش‌فرض</h3>
+                            <form id="new-default-service-form" class="mb-4 space-y-2">
+                                <input type="text" id="default-service-description" class="input-field"
+                                    placeholder="شرح خدمات" required>
+                                <input type="text" id="default-service-price" class="input-field currency-input"
+                                    placeholder="قیمت (تومان)" required style="direction: ltr;">
+                                <button type="submit" class="btn btn-primary w-full">افزودن خدمات</button>
+                            </form>
+                            <div id="default-services-list" class="overflow-auto max-h-60"></div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+<div id="notification-history-modal" class="modal-overlay hidden" style="z-index: 9000;">
+        <div class="card w-full max-w-lg max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between border-b border-stone-700 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <h3 class="text-xl font-bold text-white">مرکز اعلان‌ها</h3>
+                </div>
+                <button onclick="closeModal('notification-history-modal')" class="text-stone-400 hover:text-white p-1 rounded-lg focus:outline-none">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <!-- Header Controls & Filters -->
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4 bg-stone-900/60 p-2 rounded-lg border border-stone-800 text-xs">
+                <div class="flex items-center bg-stone-800 rounded-md p-0.5">
+                    <button id="notif-tab-all" class="px-3 py-1.5 rounded-md font-bold transition bg-stone-700 text-white">همه</button>
+                    <button id="notif-tab-unread" class="px-3 py-1.5 rounded-md font-bold transition text-stone-400 hover:text-white">خوانده‌نشده</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="notif-mark-all-read-btn" class="text-xs text-amber-400 hover:text-amber-300 transition hover:underline">علامت همه به عنوان خوانده شده</button>
+                    <span class="text-stone-600">|</span>
+                    <button id="notif-clear-history-btn" class="text-xs text-red-400 hover:text-red-300 transition hover:underline">پاک کردن تاریخچه</button>
+                </div>
+            </div>
+
+            <!-- History List Container -->
+            <div id="notification-history-list" class="overflow-y-auto flex-1 pr-1 space-y-2 max-h-[50vh]">
+                <!-- Rendered dynamically by NotificationCenter -->
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-stone-800 text-left">
+                <button onclick="closeModal('notification-history-modal')" class="btn btn-secondary text-xs px-4 py-2">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal (Fallback) -->
+    <div id="notification-modal" class="modal-overlay hidden" style="z-index: 9000;">
+        <div class="card w-full max-w-sm text-center">
+            <p id="notification-message" class="text-lg mb-4"></p>
+            <button id="notification-ok-btn" class="btn btn-primary w-full">باشه</button>
+        </div>
+    </div>
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal-overlay hidden" style="z-index: 120;">
+        <div class="card w-full max-w-sm text-center">
+            <p id="confirmation-message" class="text-lg mb-6"></p>
+            <div class="flex gap-4">
+                <button id="confirm-yes-btn" class="btn btn-danger w-full">بله، حذف کن</button>
+                <button id="confirm-no-btn" class="btn btn-secondary w-full">انصراف</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Credit/Payment Modal -->
+    <div id="add-credit-payment-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">افزایش اعتبار برای <span
+                    id="add-credit-payment-customer-name"></span></h3>
+            <form id="add-credit-payment-form" class="space-y-4">
+                <input type="hidden" id="add-credit-payment-customer-id">
+                <div>
+                    <label for="add-credit-payment-amount" class="block mb-2 text-sm">مبلغ (تومان)</label>
+                    <input type="text" id="add-credit-payment-amount" class="input-field currency-input" required
+                        style="direction: ltr;">
+                </div>
+                <div>
+                    <label for="add-credit-payment-method" class="block mb-2 text-sm">نوع تراکنش</label>
+                    <select id="add-credit-payment-method" class="input-field">
+                        <option value="cash">نقد</option>
+                        <option value="card">کارتخوان</option>
+                        <option value="card_to_card">کارت به کارت</option>
+                        <option value="credit">اعتبار</option>
+                        <option value="discount">تخفیف</option>
+                        <option value="check">چک</option>
+                    </select>
+                </div>
+                <div id="add-credit-check-date-container" class="hidden">
+                    <label for="add-credit-check-date-display" class="block mb-2 text-sm">تاریخ چک</label>
+                    <input type="text" id="add-credit-check-date-display" class="input-field cursor-pointer"
+                        placeholder="انتخاب تاریخ چک" readonly>
+                    <input type="hidden" id="add-credit-check-date">
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ثبت</button>
+                    <button type="button" onclick="closeModal('add-credit-payment-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deduct Credit Modal -->
+    <div id="deduct-credit-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">کاهش اعتبار برای <span
+                    id="deduct-credit-customer-name"></span></h3>
+            <form id="deduct-credit-form" class="space-y-4">
+                <input type="hidden" id="deduct-credit-customer-id">
+                <div>
+                    <label for="deduct-credit-amount" class="block mb-2 text-sm">مبلغ کاهش اعتبار (تومان)</label>
+                    <input type="text" id="deduct-credit-amount" class="input-field currency-input" required
+                        style="direction: ltr;">
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ثبت</button>
+                    <button type="button" onclick="closeModal('deduct-credit-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Customer Modal -->
+    <div id="edit-customer-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش مشتری</h3>
+            <form id="edit-customer-form">
+                <input type="hidden" id="edit-customer-id">
+                <div class="mb-4"><label for="edit-customer-name" class="block mb-2 text-sm">نام</label><input
+                        type="text" id="edit-customer-name" class="input-field" required></div>
+                <div class="mb-4"><label for="edit-customer-sub-code" class="block mb-2 text-sm">کد اشتراک</label><input
+                        type="text" id="edit-customer-sub-code" class="input-field"></div>
+                <div class="mb-4"><label for="edit-customer-phone" class="block mb-2 text-sm">تلفن</label><input
+                        type="tel" id="edit-customer-phone" class="input-field"></div>
+                <div class="mb-4"><label for="edit-customer-credit-limit" class="block mb-2 text-sm">سقف اعتبار (تومان)</label><input
+                        type="text" id="edit-customer-credit-limit" class="input-field currency-input"
+                        placeholder="خالی = آزاد (Unlimited)" style="direction: ltr;"></div>
+                <div class="flex gap-4">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره</button>
+                    <button type="button" onclick="closeModal('edit-customer-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Buffet Item Modal -->
+    <div id="edit-buffet-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش محصول بوفه</h3>
+            <form id="edit-buffet-form">
+                <input type="hidden" id="edit-buffet-id">
+                <div class="mb-4"><label for="edit-buffet-name" class="block mb-2 text-sm">نام محصول</label><input
+                        type="text" id="edit-buffet-name" class="input-field" required></div>
+                <div class="mb-4"><label for="edit-buffet-buy-price" class="block mb-2 text-sm">قیمت خرید</label><input
+                        type="text" id="edit-buffet-buy-price" class="input-field currency-input" required
+                        style="direction: ltr;"></div>
+                <div class="mb-4"><label for="edit-buffet-sell-price" class="block mb-2 text-sm">قیمت فروش</label><input
+                        type="text" id="edit-buffet-sell-price" class="input-field currency-input" required
+                        style="direction: ltr;"></div>
+                <div class="mb-4"><label for="edit-buffet-stock" class="block mb-2 text-sm">موجودی</label><input
+                        type="number" id="edit-buffet-stock" class="input-field" required></div>
+                <div class="flex gap-4">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره</button>
+                    <button type="button" onclick="closeModal('edit-buffet-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Console Modal -->
+    <div id="edit-console-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-md">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش کنسول</h3>
+            <form id="edit-console-form" class="space-y-4">
+                <input type="hidden" id="edit-console-id">
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="edit-console-type" class="input-field" placeholder="نوع کنسول (مثلا PS5)"
+                        required>
+                    <input type="number" id="edit-console-number" class="input-field" placeholder="شماره" required>
+                </div>
+                <div id="edit-rate-fields-container" class="space-y-2 my-2">
+                </div>
+                <button type="button" id="edit-add-rate-field-btn"
+                    class="text-sm text-amber-400 hover:text-amber-300 mb-4">+ افزودن تعرفه دیگر</button>
+
+                <div class="border-t border-stone-700 my-4"></div>
+                <h4 class="text-lg font-bold text-white">تعرفه ساعتی ویژه</h4>
+                <div class="grid grid-cols-3 gap-2">
+                    <input type="time" id="edit-special-rate-start-time" class="input-field" placeholder="زمان شروع">
+                    <input type="time" id="edit-special-rate-end-time" class="input-field" placeholder="زمان پایان">
+                    <input type="text" id="edit-special-rate-amount" class="input-field currency-input"
+                        placeholder="مبلغ اضافی" style="direction: ltr;">
+                </div>
+
+                <div class="flex gap-4 mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره تغییرات</button>
+                    <button type="button" onclick="closeModal('edit-console-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-md">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش کاربر</h3>
+            <form id="edit-user-form" class="space-y-4">
+                <input type="hidden" id="edit-user-id">
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-stone-300">نام کاربری</label>
+                    <p id="edit-user-username-display" class="text-lg text-white"></p>
+                </div>
+                <div>
+                    <label class="block mb-2 text-sm font-medium text-stone-300">دسترسی‌ها</label>
+                    <div
+                        class="grid grid-cols-1 gap-2 text-sm text-stone-300 bg-stone-800 p-3 rounded h-60 overflow-y-auto border border-stone-600">
+                        <!-- View Permissions -->
+                        <div class="font-bold text-amber-500 mt-2 mb-1 border-b border-stone-600 pb-1">مشاهده صفحات
+                        </div>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="view_orders"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">داشبورد
+                            (سفارشات)</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions"
+                                value="view_tournaments"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">تورنومنت</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="view_reports"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">گزارشات</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions"
+                                value="view_customers"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مشتریان</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="view_buffet"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">بوفه</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="view_expenses"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">هزینه‌ها</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions"
+                                value="view_secretary"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">کارکرد
+                            منشی</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="view_settings"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">تنظیمات</label>
+
+                        <!-- Action Permissions -->
+                        <div class="font-bold text-amber-500 mt-4 mb-1 border-b border-stone-600 pb-1">عملیات مدیریتی
+                        </div>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="manage_users"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                            کاربران</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions"
+                                value="manage_consoles"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                            کنسول‌ها</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="manage_buffet"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                            بوفه (افزودن/ویرایش)</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions"
+                                value="manage_expenses"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                            هزینه‌ها (ثبت/ویرایش)</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions"
+                                value="manage_tournaments"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                            تورنومنت (ایجاد/حذف)</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="edit_orders"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">ویرایش
+                            سفارشات</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="delete_orders"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">حذف
+                            سفارشات</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions" value="settle_orders"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">تسویه
+                            حساب</label>
+                        <label class="flex items-center"><input type="checkbox" name="permissions"
+                                value="manage_secretary_logs"
+                                class="mr-2 ml-2 form-checkbox text-amber-500 rounded bg-stone-700 border-stone-600">مدیریت
+                            لاگ منشی (تسویه/ویرایش)</label>
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-user-hourly-rate" class="block mb-2 text-sm font-medium text-stone-300">نرخ ساعتی
+                        (تومان)</label>
+                    <input type="text" id="edit-user-hourly-rate" class="input-field currency-input"
+                        style="direction: ltr;">
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره</button>
+                    <button type="button" onclick="closeModal('edit-user-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Default Service Modal -->
+    <div id="edit-default-service-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-md">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش خدمات پیش‌فرض</h3>
+            <form id="edit-default-service-form" class="space-y-4">
+                <input type="hidden" id="edit-default-service-id">
+                <div>
+                    <label for="edit-default-service-description" class="block mb-2 text-sm font-medium text-stone-300">شرح خدمات</label>
+                    <input type="text" id="edit-default-service-description" class="input-field" required>
+                </div>
+                <div>
+                    <label for="edit-default-service-price" class="block mb-2 text-sm font-medium text-stone-300">قیمت (تومان)</label>
+                    <input type="text" id="edit-default-service-price" class="input-field currency-input" required style="direction: ltr;">
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره</button>
+                    <button type="button" onclick="closeModal('edit-default-service-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Paid Order Modal (Admin Only) -->
+    <div id="edit-paid-order-modal" class="modal-overlay hidden" style="z-index: 80;">
+        <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش مجدد فاکتور تسویه‌شده</h3>
+
+            <!-- Basic Info Header -->
+            <div class="p-4 bg-stone-800 rounded-lg space-y-2 mb-4 text-xs">
+                <div class="flex justify-between items-center text-sm font-bold">
+                    <span id="edit-paid-invoice-number" class="text-amber-400"></span>
+                    <div>
+                        <span class="text-stone-400">مشتری: </span>
+                        <span id="edit-paid-customer-name" class="text-white"></span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2 border-t border-stone-700 text-stone-300">
+                    <div><span>زمان شروع: </span><span id="edit-paid-start-time" dir="ltr" class="font-bold"></span></div>
+                    <div><span>زمان پایان: </span><span id="edit-paid-end-time" dir="ltr" class="font-bold"></span></div>
+                    <div><span>زمان تسویه: </span><span id="edit-paid-settlement-time" dir="ltr" class="font-bold"></span></div>
+                </div>
+            </div>
+
+            <!-- Buffet Items Section -->
+            <div class="mb-4 border-t border-stone-700 pt-3">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-md font-bold text-white">آیتم‌های بوفه</h4>
+                </div>
+                <div id="edit-paid-buffet-list" class="space-y-2 mb-2"></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end bg-stone-800 p-3 rounded-lg">
+                    <div class="md:col-span-2">
+                        <label class="block mb-1 text-xs text-stone-300">انتخاب محصول بوفه</label>
+                        <select id="edit-paid-buffet-select" class="input-field text-xs"></select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs text-stone-300">تعداد</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="edit-paid-buffet-qty" class="input-field text-xs text-center" value="1" min="1">
+                            <button type="button" id="edit-paid-add-buffet-btn" class="btn btn-secondary text-xs whitespace-nowrap">افزودن</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Services Section -->
+            <div class="mb-4 border-t border-stone-700 pt-3">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="text-md font-bold text-white">خدمات</h4>
+                </div>
+                <div id="edit-paid-services-list" class="space-y-2 mb-2"></div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end bg-stone-800 p-3 rounded-lg">
+                    <div>
+                        <label class="block mb-1 text-xs text-stone-300">انتخاب از خدمات پیش‌فرض</label>
+                        <select id="edit-paid-default-service-select" class="input-field text-xs"></select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs text-stone-300">شرح خدمات</label>
+                        <input type="text" id="edit-paid-service-desc" class="input-field text-xs" placeholder="عنوان خدمات">
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs text-stone-300">مبلغ (تومان)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="edit-paid-service-price" class="input-field text-xs currency-input" placeholder="مبلغ" dir="ltr">
+                            <button type="button" id="edit-paid-add-service-btn" class="btn btn-secondary text-xs whitespace-nowrap">افزودن</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div class="mb-4 p-4 bg-stone-800 rounded-lg space-y-2 text-xs">
+                <div class="flex justify-between">
+                    <span class="text-stone-400">هزینه کل بازی:</span>
+                    <span id="edit-paid-game-cost" class="font-bold"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-stone-400">هزینه بوفه:</span>
+                    <span id="edit-paid-buffet-cost" class="font-bold"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-stone-400">هزینه خدمات:</span>
+                    <span id="edit-paid-services-cost" class="font-bold"></span>
+                </div>
+                <div class="border-t border-stone-700 my-1"></div>
+                <div class="flex justify-between text-sm font-bold text-white">
+                    <span>مبلغ کل فاکتور:</span>
+                    <span id="edit-paid-total-amount"></span>
+                </div>
+                <div class="flex justify-between text-amber-400 font-bold">
+                    <span>مبلغ باقی‌مانده پرداخت:</span>
+                    <span id="edit-paid-remaining-amount"></span>
+                </div>
+            </div>
+
+            <!-- Payments Section -->
+            <div class="border-t border-stone-700 pt-3 mb-4">
+                <h4 class="text-md font-bold text-white mb-2">پرداخت‌ها</h4>
+                <div id="edit-paid-payments-list" class="space-y-2 mb-3"></div>
+
+                <div class="bg-stone-800 p-3 rounded-lg space-y-3">
+                    <h5 class="text-xs font-bold text-stone-300">افزودن پرداخت جدید</h5>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+                        <div>
+                            <label class="block mb-1 text-xs text-stone-300">روش پرداخت</label>
+                            <select id="edit-paid-payment-method" class="input-field text-xs">
+                                <option value="cash">نقد</option>
+                                <option value="card">کارتخوان</option>
+                                <option value="card_to_card">کارت به کارت</option>
+                                <option value="credit">اعتبار مشتری</option>
+                                <option value="discount">تخفیف</option>
+                                <option value="check">چک</option>
+                            </select>
+                        </div>
+                        <div id="edit-paid-check-date-container" class="hidden">
+                            <label class="block mb-1 text-xs text-stone-300">تاریخ چک</label>
+                            <input type="text" id="edit-paid-check-date-display" class="input-field text-xs cursor-pointer" placeholder="انتخاب تاریخ" readonly>
+                            <input type="hidden" id="edit-paid-check-date">
+                        </div>
+                        <div id="edit-paid-credit-customer-container" class="hidden relative md:col-span-2">
+                            <label class="block mb-1 text-xs text-stone-300">انتخاب مشتری برای اعتبار</label>
+                            <input type="text" id="edit-paid-credit-search" class="input-field text-xs" placeholder="جستجوی مشتری...">
+                            <div id="edit-paid-credit-results" class="absolute top-full left-0 right-0 bg-stone-800 border border-stone-600 rounded-md mt-1 z-10 max-h-32 overflow-y-auto"></div>
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-xs text-stone-300">مبلغ</label>
+                            <input type="text" id="edit-paid-payment-amount" class="input-field text-xs currency-input" placeholder="مبلغ" dir="ltr">
+                        </div>
+                        <button type="button" id="edit-paid-add-payment-btn" class="btn btn-secondary text-xs">افزودن پرداخت</button>
+                    </div>
+                </div>
+            </div>
+
+            <p id="edit-paid-error" class="text-red-400 text-xs text-center hidden mb-4"></p>
+
+            <div class="flex gap-3 pt-2">
+                <button type="button" id="edit-paid-save-btn" class="btn btn-primary w-full">ذخیره تغییرات فاکتور</button>
+                <button type="button" onclick="closeModal('edit-paid-order-modal')" class="btn btn-secondary w-full">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settle Order Modal -->
+    <div id="settle-order-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-lg">
+            <h3 id="settle-modal-title" class="text-xl font-bold text-white mb-4">تسویه فاکتور</h3>
+
+            <div class="mb-4 p-4 bg-stone-800 rounded-lg space-y-2">
+                <div class="flex justify-between">
+                    <span id="settle-invoice-number" class="text-xs text-stone-400"></span>
+                    <span>مشتری:</span>
+                    <span id="settle-customer-name" class="font-bold"></span>
+                </div>
+
+                <div id="settle-history-details" class="space-y-2 text-xs border-t border-b border-stone-700 py-2 my-2">
+                </div>
+
+                <div class="flex justify-between text-sm">
+                    <span class="text-stone-400">هزینه کل بازی:</span>
+                    <span id="settle-game-cost" class="font-bold"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-stone-400">هزینه بوفه:</span>
+                    <span id="settle-buffet-cost" class="font-bold"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-stone-400">هزینه خدمات:</span>
+                    <span id="settle-services-cost" class="font-bold"></span>
+                </div>
+                <div class="border-t border-stone-700 my-2"></div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-stone-400">جمع کل:</span>
+                    <span id="settle-subtotal-amount" class="font-bold"></span>
+                </div>
+                <div class="border-t border-stone-700 my-2"></div>
+                <div class="flex justify-between">
+                    <span>مبلغ نهایی:</span>
+                    <span id="settle-total-amount" class="font-bold"></span>
+                </div>
+                <div class="flex justify-between text-lg text-amber-400">
+                    <span>مبلغ باقی‌مانده:</span>
+                    <span id="settle-remaining-amount" class="font-bold"></span>
+                </div>
+            </div>
+            <div id="payment-parts-list" class="space-y-2 mb-4 max-h-40 overflow-y-auto"></div>
+            <div class="border-t border-stone-700 pt-4">
+                <h4 class="text-lg font-bold text-white mb-2">افزودن پرداخت</h4>
+                <div id="add-payment-form" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                    <div>
+                        <label for="payment-method" class="block mb-1 text-sm">روش پرداخت</label>
+                        <select id="payment-method" class="input-field">
+                            <option value="cash">نقد</option>
+                            <option value="card">کارتخوان</option>
+                            <option value="card_to_card">کارت به کارت</option>
+                            <option value="credit">اعتبار مشتری</option>
+                            <option value="discount">تخفیف</option>
+                            <option value="check">چک</option>
+                        </select>
+                    </div>
+                    <div id="check-payment-date-container" class="hidden md:col-span-1">
+                        <label for="check-payment-date" class="block mb-1 text-sm">تاریخ چک</label>
+                        <input type="text" id="check-payment-date-display" class="input-field cursor-pointer"
+                            placeholder="انتخاب تاریخ چک" readonly>
+                        <input type="hidden" id="check-payment-date">
+                    </div>
+                    <div id="credit-customer-selection-container" class="hidden relative md:col-span-2">
+                        <label for="credit-customer-search" class="block mb-1 text-sm">انتخاب مشتری برای کسر از
+                            اعتبار</label>
+                        <input type="text" id="credit-customer-search" class="input-field"
+                            placeholder="جستجوی مشتری...">
+                        <div id="credit-customer-results"
+                            class="absolute top-full left-0 right-0 bg-stone-800 border border-stone-600 rounded-md mt-1 z-10 max-h-40 overflow-y-auto">
+                        </div>
+                        <div id="settle-credit-info-container" class="hidden mt-2 p-3 bg-stone-900 border border-stone-700 rounded text-xs space-y-1">
+                        </div>
+                    </div>
+                    <div id="payment-amount-container">
+                        <label for="payment-amount" class="block mb-1 text-sm">مبلغ</label>
+                        <input type="text" id="payment-amount" class="input-field currency-input"
+                            placeholder="مبلغ پرداخت" style="direction: ltr;">
+                    </div>
+                    <button type="button" id="add-payment-part-btn" class="btn btn-secondary w-full">افزودن</button>
+                </div>
+            </div>
+            <p id="settle-error" class="text-red-400 text-sm text-center hidden my-4"></p>
+            <div class="flex gap-4 mt-6">
+                <button id="finalize-settlement-btn" class="btn btn-primary w-full" disabled>تکمیل تسویه</button>
+                <button id="settle-close-btn" class="btn btn-secondary w-full">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Buffet to Order Modal -->
+    <div id="add-buffet-to-order-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">افزودن به بوفه</h3>
+            <form id="add-buffet-to-order-form">
+                <input type="hidden" id="add-buffet-order-id">
+                <div class="mb-4">
+                    <label for="buffet-item-select" class="block mb-2 text-sm">محصول</label>
+                    <select id="buffet-item-select" class="input-field"></select>
+                </div>
+                <div class="mb-4">
+                    <label for="buffet-item-quantity" class="block mb-2 text-sm">تعداد</label>
+                    <input type="number" id="buffet-item-quantity" class="input-field" value="1" min="1">
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" class="btn btn-primary w-full">افزودن</button>
+                    <button type="button" onclick="closeModal('add-buffet-to-order-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div id="add-service-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">افزودن خدمات</h3>
+            <form id="add-service-form">
+                <input type="hidden" id="add-service-order-id">
+                <div class="mb-4">
+                    <label for="default-service-select" class="block mb-2 text-sm">انتخاب از خدمات پیش‌فرض</label>
+                    <select id="default-service-select" class="input-field">
+                        <option value="">--- انتخاب کنید یا دستی وارد کنید ---</option>
+                    </select>
+                </div>
+                <div class="border-t border-stone-700 my-4"></div>
+                <div class="mb-4">
+                    <label for="service-description" class="block mb-2 text-sm">شرح خدمات (دستی)</label>
+                    <input type="text" id="service-description" class="input-field" required>
+                </div>
+                <div class="mb-4">
+                    <label for="service-price" class="block mb-2 text-sm">مبلغ خدمات (دستی)</label>
+                    <input type="text" id="service-price" class="input-field currency-input" required
+                        style="direction: ltr;">
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" class="btn btn-primary w-full">افزودن</button>
+                    <button type="button" onclick="closeModal('add-service-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="order-details-modal" class="modal-overlay hidden" style="z-index: 70;">
+        <div class="card w-full max-w-lg">
+            <h3 class="text-xl font-bold text-white mb-4">جزئیات فاکتور</h3>
+            <div class="p-4 bg-stone-800 rounded-lg space-y-2 text-sm">
+                <div class="flex justify-between"><span>مشتری:</span><span id="details-customer-name"
+                        class="font-bold"></span></div>
+                <div class="flex justify-between"><span>کنسول:</span><span id="details-console-name"
+                        class="font-bold"></span></div>
+                <div class="flex justify-between"><span>تاریخ:</span><span id="details-date" class="font-bold"></span>
+                </div>
+                <div class="border-t border-stone-700 my-2"></div>
+                <div id="details-costs-container" class="space-y-1"></div>
+                <div class="border-t border-stone-700 my-2"></div>
+                <h4 class="text-md font-bold text-white pt-2">نحوه پرداخت:</h4>
+                <div id="details-payments-list" class="space-y-1"></div>
+            </div>
+            <div class="flex gap-4 mt-6">
+                <button id="details-close-btn" class="btn btn-secondary w-full">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extend Session Modal -->
+    <div id="extend-session-details-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">تمدید جلسه</h3>
+            <form id="extend-session-form" class="space-y-4">
+                <input type="hidden" id="extend-session-order-id">
+                <div>
+                    <label class="block mb-2 text-sm">نوع تمدید</label>
+                    <div class="flex flex-wrap gap-x-6 gap-y-2" id="extend-limit-type-selector">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="extendLimitType" value="open" class="form-radio" checked>
+                            <span class="mr-2 text-stone-300">زمان آزاد</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="extendLimitType" value="time" class="form-radio">
+                            <span class="mr-2 text-stone-300">محدودیت زمانی</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="extendLimitType" value="amount" class="form-radio">
+                            <span class="mr-2 text-stone-300">محدودیت مبلغ</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="extend-time-limit-container" class="hidden">
+                    <label for="extend-order-duration" class="block mb-2 text-sm">مدت زمان اضافه (دقیقه)</label>
+                    <input type="number" id="extend-order-duration" class="input-field" placeholder="مثلا: 30">
+                </div>
+                <div id="extend-amount-limit-container" class="hidden">
+                    <label for="extend-order-amount" class="block mb-2 text-sm">مبلغ اضافه (تومان)</label>
+                    <input type="text" id="extend-order-amount" class="input-field currency-input"
+                        placeholder="مثلا: 20,000" style="direction: ltr;">
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">تمدید</button>
+                    <button type="button" onclick="closeModal('extend-session-details-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transfer Order Modal -->
+    <div id="transfer-order-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">انتقال جلسه</h3>
+            <form id="transfer-order-form">
+                <input type="hidden" id="transfer-order-id">
+                <div class="mb-4">
+                    <label for="transfer-order-console-select" class="block mb-2 text-sm">کنسول جدید</label>
+                    <select id="transfer-order-console-select" class="input-field"></select>
+                </div>
+                <div id="transfer-order-rate-container" class="mb-4">
+                    <label for="transfer-order-rate-select" class="block mb-2 text-sm">تعرفه جدید</label>
+                    <select id="transfer-order-rate-select" class="input-field"></select>
+                </div>
+                <div class="flex gap-4">
+                    <button type="submit" class="btn btn-primary w-full">انتقال</button>
+                    <button type="button" onclick="closeModal('transfer-order-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Shamsi Datepicker Modal -->
+    <div id="shamsi-datepicker-modal" class="modal-overlay hidden" style="z-index: 110;">
+        <div class="shamsi-datepicker-container">
+            <div class="shamsi-datepicker-header">
+                <button id="shamsi-prev-month" class="p-2 rounded-md hover:bg-stone-700">&lt;</button>
+                <div id="shamsi-month-year" class="font-bold"></div>
+                <button id="shamsi-next-month" class="p-2 rounded-md hover:bg-stone-700">&gt;</button>
+            </div>
+            <div id="shamsi-datepicker-grid" class="shamsi-datepicker-grid"></div>
+        </div>
+    </div>
+    <!-- This modal is now deprecated and replaced by the inline form -->
+    <!-- Register Participant Modal -->
+    <div id="register-participant-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ثبت نام شرکت کننده</h3>
+            <form id="register-participant-form" class="space-y-4">
+                <input type="hidden" id="register-participant-tournament-id">
+                <div>
+                    <label for="participant-name" class="block mb-2 text-sm">نام و نام خانوادگی</label>
+                    <input type="text" id="participant-name" class="input-field" required>
+                </div>
+                <div>
+                    <label for="participant-phone" class="block mb-2 text-sm">شماره تماس</label>
+                    <input type="tel" id="participant-phone" class="input-field">
+                </div>
+                <div>
+                    <label for="participant-description" class="block mb-2 text-sm">توضیحات</label>
+                    <textarea id="participant-description" class="input-field" rows="2"></textarea>
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ثبت نام</button>
+                    <button type="button" onclick="closeModal('register-participant-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Bracket Modal -->
+    <div id="bracket-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-4xl">
+            <h3 class="text-xl font-bold text-white mb-4">جدول مسابقات</h3>
+            <div id="bracket-container" class="max-h-96 overflow-y-auto"></div>
+            <div class="flex gap-4 mt-6">
+                <button onclick="closeModal('bracket-modal')" class="btn btn-secondary w-full">بستن</button>
+            </div>
+        </div>
+    </div>
+    <!-- Edit Description Modal -->
+    <div id="edit-description-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش توضیحات</h3>
+            <form id="edit-description-form" class="space-y-4">
+                <input type="hidden" id="edit-description-order-id">
+                <div>
+                    <label for="edit-order-description" class="block mb-2 text-sm">توضیحات</label>
+                    <textarea id="edit-order-description" class="input-field" rows="3"></textarea>
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره</button>
+                    <button type="button" onclick="closeModal('edit-description-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal -->
+    <div id="edit-order-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش زمان و محدودیت</h3>
+            <form id="edit-order-form" class="space-y-4">
+                <input type="hidden" id="edit-order-id">
+                <div>
+                    <label for="edit-order-start-time" class="block mb-2 text-sm">زمان شروع</label>
+                    <input type="time" id="edit-order-start-time" class="input-field">
+                </div>
+                <div class="border-t border-stone-700 my-4"></div>
+                <div>
+                    <label class="block mb-2 text-sm">نوع محدودیت</label>
+                    <div class="flex flex-wrap gap-x-6 gap-y-2" id="edit-limit-type-selector">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="editLimitType" value="open" class="form-radio" checked>
+                            <span class="mr-2 text-stone-300">زمان آزاد</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="editLimitType" value="time" class="form-radio">
+                            <span class="mr-2 text-stone-300">محدودیت زمانی</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="editLimitType" value="amount" class="form-radio">
+                            <span class="mr-2 text-stone-300">محدودیت مبلغ</span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="editLimitType" value="endTime" class="form-radio">
+                            <span class="mr-2 text-stone-300">محدودیت زمان پایان</span>
+                        </label>
+                    </div>
+                </div>
+                <div id="edit-time-limit-container" class="hidden">
+                    <label for="edit-order-duration" class="block mb-2 text-sm">مدت زمان (دقیقه)</label>
+                    <input type="number" id="edit-order-duration" class="input-field" placeholder="مثلا: 60">
+                </div>
+                <div id="edit-amount-limit-container" class="hidden">
+                    <label for="edit-order-amount" class="block mb-2 text-sm">مبلغ مورد نظر (تومان)</label>
+                    <input type="text" id="edit-order-amount" class="input-field currency-input"
+                        placeholder="مثلا: 50,000" style="direction: ltr;">
+                </div>
+                <div id="edit-end-time-limit-container" class="hidden">
+                    <label for="edit-order-end-time" class="block mb-2 text-sm">زمان پایان</label>
+                    <input type="time" id="edit-order-end-time" class="input-field">
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره</button>
+                    <button type="button" onclick="closeModal('edit-order-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Participants Modal -->
+    <div id="participants-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-lg">
+            <h3 class="text-xl font-bold text-white mb-4">شرکت کنندگان</h3>
+            <div id="participants-list" class="max-h-96 overflow-y-auto"></div>
+            <form id="add-participant-form" class="space-y-4 mt-6">
+                <input type="hidden" id="add-participant-tournament-id">
+                <h4 class="text-lg font-bold text-white">افزودن شرکت کننده</h4>
+                <div>
+                    <label for="new-participant-name" class="block mb-2 text-sm">نام و نام خانوادگی</label>
+                    <input type="text" id="new-participant-name" class="input-field" required>
+                </div>
+                <div>
+                    <label for="new-participant-phone" class="block mb-2 text-sm">شماره تماس</label>
+                    <input type="tel" id="new-participant-phone" class="input-field">
+                </div>
+                <div>
+                    <label for="new-participant-description" class="block mb-2 text-sm">توضیحات</label>
+                    <textarea id="new-participant-description" class="input-field" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">افزودن</button>
+            </form>
+            <div class="flex gap-4 mt-6">
+                <button onclick="closeModal('participants-modal')" class="btn btn-secondary w-full">بستن</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Secretary Log Modal -->
+    <div id="edit-secretary-log-modal" class="modal-overlay hidden">
+        <div class="card w-full max-w-sm">
+            <h3 class="text-xl font-bold text-white mb-4">ویرایش کارکرد</h3>
+            <form id="edit-secretary-log-form" class="space-y-4">
+                <input type="hidden" id="edit-secretary-log-id">
+                <div class="relative">
+                    <label for="edit-secretary-log-date-display" class="block mb-2 text-sm">تاریخ</label>
+                    <input type="text" id="edit-secretary-log-date-display" class="input-field cursor-pointer"
+                        placeholder="برای انتخاب کلیک کنید" readonly required>
+                    <input type="hidden" id="edit-secretary-log-date">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="edit-secretary-log-clock-in" class="block mb-2 text-sm">ساعت ورود</label>
+                        <input type="time" id="edit-secretary-log-clock-in" class="input-field" required>
+                    </div>
+                    <div>
+                        <label for="edit-secretary-log-clock-out" class="block mb-2 text-sm">ساعت خروج</label>
+                        <input type="time" id="edit-secretary-log-clock-out" class="input-field" required>
+                    </div>
+                </div>
+                <div class="flex gap-4 !mt-6">
+                    <button type="submit" class="btn btn-primary w-full">ذخیره تغییرات</button>
+                    <button type="button" onclick="closeModal('edit-secretary-log-modal')"
+                        class="btn btn-secondary w-full">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="customer-history-modal" class="modal-overlay hidden" style="z-index: 60;">
+        <div class="card w-full max-w-4xl">
+            <h3 class="text-xl font-bold text-white mb-4">تاریخچه فاکتورهای اعتباری برای <span
+                    id="history-customer-name"></span></h3>
+            <div id="customer-history-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 p-3 bg-stone-800 rounded-lg text-xs">
+            </div>
+            <div class="mb-4">
+                <input type="text" id="customer-history-search" class="input-field" placeholder="جستجو در شرح...">
+            </div>
+            <div class="mb-6">
+                <canvas id="customer-credit-chart"></canvas>
+            </div>
+            <div id="customer-history-content" class="max-h-96 overflow-y-auto">
+            </div>
+            <div class="flex gap-4 mt-6">
+                <button id="customer-history-close-btn" class="btn btn-secondary w-full">بستن</button>
+            </div>
+        </div>
+    <script src="../public/assets/constants.js?v=2"></script>
+    <script src="../public/assets/scripts.js?v=9"></script>
+</body>
+</html>

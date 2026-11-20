@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ورود | GameMario</title>
+    <!-- Favicon for the site -->
+    <link rel="icon" href="../public/assets/logo.svg" type="image/svg+xml">
+
+    <!-- Tailwind CSS for styling -->
+    <script src="../public/assets/libs/tailwind.js"></script>
+
+    <!-- Chart.js for charts and reports -->
+    <script src="../public/assets/libs/chart.js"></script>
+
+    <!-- Libraries for exporting tables -->
+    <script src="../public/assets/libs/xlsx.full.min.js"></script>
+
+    <!-- Moment.js for date and time manipulation -->
+    <script src="../public/assets/libs/moment.min.js"></script>
+    <script src="../public/assets/libs/moment-jalaali.js"></script>
+    <script
+        src="../public/assets/libs/chartjs-adapter-moment.min.js"></script>
+
+    <!-- Anime.js for animations -->
+    <script src="../public/assets/libs/anime.min.js"></script>
+
+    <!-- Tone.js for audio notifications -->
+    <script src="../public/assets/libs/Tone.js"></script>
+
+    <link rel="stylesheet" href="../public/assets/styles.css">
+    <style>
+        .neon-text {
+            font-family: 'Orbitron', sans-serif;
+            color: #e53e3e;
+            text-shadow: 0 0 5px rgba(229, 62, 62, 0.7);
+            letter-spacing: 2px;
+        }
+
+        .status-card {
+            background-color: #2a2a2a;
+            border: 1px solid #4b5563;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            transition: all 0.3s ease;
+        }
+
+        /* AVAILABLE (GREEN) */
+        .status-card.available {
+            border-color: #10b981;
+        }
+        .status-card.available::before {
+            background: #10b981;
+        }
+        .status-card.available .card-status-icon {
+            color: #10b981;
+        }
+        .status-card.available .card-status-text {
+            color: #34d399;
+        }
+
+        /* OCCUPIED (RED) */
+        .status-card.occupied {
+            border-color: #dc2626;
+        }
+        .status-card.occupied::before {
+            background: #dc2626;
+        }
+        .status-card.occupied .card-status-icon {
+            color: #dc2626;
+        }
+        .status-card.occupied .card-status-text {
+            color: #e53e3e;
+        }
+
+        .card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .card-status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .card-status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .card-status-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s forwards;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .card-status-text {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .card-timer {
+            font-size: 1.125rem;
+            margin-top: 1rem;
+            color: #d1d5db;
+            direction: ltr;
+        }
+
+        .card-timer strong {
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff;
+        }
+    </style>
+
+<body class="antialiased" data-page="login">
+<div id="loading-overlay" class="modal-overlay hidden">
+        <div id="new-loader" class="w-24 h-24">
+            <img src="../public/assets/logo.svg" alt="Loading...">
+        </div>
+    </div>
+<div id="login-screen" class="flex items-center justify-center h-screen" style="background-color: #1a1a1a;">
+        <div class="w-full max-w-md p-4">
+            <form id="login-form" class="card p-8 space-y-6" style="background-color: #2a2a2a;">
+                <div class="flex justify-center mb-4">
+                    <img src="../public/assets/logo.svg" class="h-20 w-20" alt="Logo">
+                </div>
+                <h2 class="text-2xl font-bold text-center text-white neon-text">ورود به پنل گیم‌نت ماریو</h2>
+                <div>
+                    <label for="username" class="block mb-2 text-sm font-medium text-gray-300">نام کاربری</label>
+                    <input type="text" id="username" class="input-field" required>
+                </div>
+                <div>
+                    <label for="password" class="block mb-2 text-sm font-medium text-gray-300">رمز عبور</label>
+                    <input type="password" id="password" class="input-field" required>
+                </div>
+                <p id="login-error" class="text-red-400 text-sm text-center hidden"></p>
+                <div class="flex items-center justify-between gap-4">
+                    <button type="submit" id="login-button" class="btn btn-primary w-full">ورود</button>
+                    <a href="../index.html" id="back-to-status-btn" class="btn btn-secondary w-full text-center">مشاهده وضعیت</a>
+                </div>
+            </form>
+        </div>
+    </div>
+<div id="toast-container" class="fixed top-5 left-5 z-[99999] flex flex-col gap-3 max-w-sm md:max-w-md w-full pointer-events-none transition-all duration-300"></div>
+    <script src="../public/assets/constants.js?v=2"></script>
+    <script src="../public/assets/scripts.js?v=9"></script>
+</body>
+</html>

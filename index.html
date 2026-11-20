@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>وضعیت | GameMario</title>
+    <!-- Favicon for the site -->
+    <link rel="icon" href="public/assets/logo.svg" type="image/svg+xml">
+
+    <!-- Tailwind CSS for styling -->
+    <script src="public/assets/libs/tailwind.js"></script>
+
+    <!-- Chart.js for charts and reports -->
+    <script src="public/assets/libs/chart.js"></script>
+
+    <!-- Libraries for exporting tables -->
+    <script src="public/assets/libs/xlsx.full.min.js"></script>
+
+    <!-- Moment.js for date and time manipulation -->
+    <script src="public/assets/libs/moment.min.js"></script>
+    <script src="public/assets/libs/moment-jalaali.js"></script>
+    <script
+        src="public/assets/libs/chartjs-adapter-moment.min.js"></script>
+
+    <!-- Anime.js for animations -->
+    <script src="public/assets/libs/anime.min.js"></script>
+
+    <!-- Tone.js for audio notifications -->
+    <script src="public/assets/libs/Tone.js"></script>
+
+    <link rel="stylesheet" href="public/assets/styles.css">
+    <style>
+        .neon-text {
+            font-family: 'Orbitron', sans-serif;
+            color: #e53e3e;
+            text-shadow: 0 0 5px rgba(229, 62, 62, 0.7);
+            letter-spacing: 2px;
+        }
+
+        .status-card {
+            background-color: #2a2a2a;
+            border: 1px solid #4b5563;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        }
+
+        .status-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            transition: all 0.3s ease;
+        }
+
+        /* AVAILABLE (GREEN) */
+        .status-card.available {
+            border-color: #10b981;
+        }
+        .status-card.available::before {
+            background: #10b981;
+        }
+        .status-card.available .card-status-icon {
+            color: #10b981;
+        }
+        .status-card.available .card-status-text {
+            color: #34d399;
+        }
+
+        /* OCCUPIED (RED) */
+        .status-card.occupied {
+            border-color: #dc2626;
+        }
+        .status-card.occupied::before {
+            background: #dc2626;
+        }
+        .status-card.occupied .card-status-icon {
+            color: #dc2626;
+        }
+        .status-card.occupied .card-status-text {
+            color: #e53e3e;
+        }
+
+        .card-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .card-status-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .card-status-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .card-status-icon svg {
+            width: 1.5rem;
+            height: 1.5rem;
+            animation: spin 1s forwards;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .card-status-text {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+
+        .card-timer {
+            font-size: 1.125rem;
+            margin-top: 1rem;
+            color: #d1d5db;
+            direction: ltr;
+        }
+
+        .card-timer strong {
+            font-family: 'Orbitron', sans-serif;
+            color: #ffffff;
+        }
+    </style>
+
+<body class="antialiased" data-page="status">
+<div id="loading-overlay" class="modal-overlay hidden">
+        <div id="new-loader" class="w-24 h-24">
+            <img src="public/assets/logo.svg" alt="Loading...">
+        </div>
+    </div>
+<div id="public-status-screen" class=" min-h-screen p-4 md:p-8 relative" style="background-color: #1a1a1a;">
+        <!-- Navigation actions -->
+        <a href="pages/login.html" id="show-login-btn" class="fixed bottom-4 right-4 md:bottom-6 md:right-6 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-lg transition duration-200 z-50 text-sm md:text-base border border-red-500 shadow-lg">ورود ادمین</a>
+
+        <div class="container mx-auto">
+            <header class="text-center mb-10 mt-6 relative">
+                <div id="digital-clock" class="text-5xl md:text-6xl font-bold neon-text mb-4" style="font-family: 'Orbitron', sans-serif; text-align: center;"></div>
+                <h1 class="text-4xl md:text-5xl font-bold neon-text" style="text-align: center;">GameNet Status</h1>
+            </header>
+
+            <div id="status-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <!-- Status cards will be injected here by JavaScript -->
+            </div>
+
+            <div id="tournaments-status-container" class="mt-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-center mb-6 neon-text">Tournaments</h2>
+                <div id="tournaments-list-status" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            </div>
+
+            <footer class="text-center text-stone-400 mt-12 py-4 border-t border-stone-700">
+                <p>&copy; <span id="current-year-status"></span> گیم‌نت ماریو. بروزرسانی خودکار هر ۳۰ ثانیه.</p>
+            </footer>
+        </div>
+    </div>
+<div id="toast-container" class="fixed top-5 left-5 z-[99999] flex flex-col gap-3 max-w-sm md:max-w-md w-full pointer-events-none transition-all duration-300"></div>
+    <script src="public/assets/constants.js?v=2"></script>
+    <script src="public/assets/scripts.js?v=9"></script>
+</body>
+</html>
